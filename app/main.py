@@ -1,4 +1,3 @@
-# main.py (atau file FastAPI utama Anda)
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
@@ -46,7 +45,7 @@ async def startup_event():
 @app.get("/")
 async def root():
     return {
-        "message": "Age Gender Classification API",
+        "message": "Gender Classification API",
         "version": settings.API_VERSION,
         "status": "running",
         "model_status": "ready" if classifier.is_loaded else "will load on first request"
@@ -54,7 +53,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint - responds quickly without loading model"""
     return {
         "status": "healthy",
         "api_version": settings.API_VERSION,
@@ -62,21 +61,15 @@ async def health_check():
         "model_status": "loaded" if classifier.is_loaded else "ready to load"
     }
 
-@app.get("/model-info")
-async def model_info(api_key: str = Depends(get_api_key)):
-    """Get model information"""
-    if classifier.is_loaded:
-        return {
-            "model_loaded": True,
-            "input_shape": classifier.input_shape,
-            "input_name": classifier.input_name,
-            "output_names": classifier.output_names
-        }
-    else:
-        return {
-            "model_loaded": False,
-            "message": "Model not loaded yet. Make a prediction request to load the model."
-        }
+@app.get("/classes")
+async def get_classes(api_key: str = Depends(get_api_key)):
+    """Get all available gender classes"""
+    return {
+        "classes": [
+            {"id": i, "name": name} 
+            for i, name in enumerate(settings.CLASS_NAMES)
+        ]
+    }
 
 @app.post("/predict")
 async def predict(
@@ -84,7 +77,7 @@ async def predict(
     api_key: str = Depends(get_api_key)
 ):
     """
-    Predict age and gender from image
+    Predict gender from image
     
     - **file**: Image file (JPEG, PNG, JPG, WEBP) max 10MB
     """
@@ -98,7 +91,7 @@ async def predict(
         contents = await file.read()
         logger.info(f"File size: {len(contents)} bytes")
         
-        # Make prediction
+        # Make prediction (model will auto-load if not loaded)
         result = classifier.predict(contents)
         
         if not result.get("success"):
@@ -107,18 +100,12 @@ async def predict(
                 detail=result.get("error", "Prediction failed")
             )
         
-        logger.info(f"Prediction successful - Age: {result.get('age')}, Gender: {result.get('gender')}")
+        logger.info(f"Prediction successful: {result.get('predicted_class')} ({result.get('confidence'):.2f})")
         
         return {
             "success": True,
-            "prediction": {
-                "age": result.get("age"),
-                "gender": result.get("gender"),
-                "gender_confidence": result.get("gender_confidence"),
-                "raw_age": result.get("raw_age")
-            },
-            "filename": file.filename,
-            "model_loaded": classifier.is_loaded
+            "prediction": result,
+            "filename": file.filename
         }
         
     except HTTPException:
@@ -152,11 +139,7 @@ async def batch_predict(
                     results.append({
                         "filename": file.filename,
                         "success": True,
-                        "prediction": {
-                            "age": result.get("age"),
-                            "gender": result.get("gender"),
-                            "gender_confidence": result.get("gender_confidence")
-                        }
+                        "prediction": result
                     })
                 else:
                     results.append({
@@ -178,8 +161,7 @@ async def batch_predict(
         return {
             "batch_results": results,
             "total_files": len(files),
-            "successful_predictions": successful,
-            "model_loaded": classifier.is_loaded
+            "successful_predictions": successful
         }
         
     except Exception as e:

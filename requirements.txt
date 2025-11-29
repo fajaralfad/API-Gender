@@ -1,9 +1,7 @@
 fastapi==0.104.1
-onnxruntime>=1.14.0
-uvicorn[standard]==0.24.0
-tensorflow-cpu==2.16.2
-pillow==10.2.0
+uvicorn==0.24.0
 python-multipart==0.0.6
+pillow==10.1.0
+numpy==1.24.3
+onnxruntime==1.16.3
 python-dotenv==1.0.0
-numpy==1.26.4
-gunicorn==21.2.0
