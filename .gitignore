@@ -1,3 +1,13 @@
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Model files (jika besar)
+models/*.onnx
+!models/.gitkeep
+
+# Python
 __pycache__/
 *.pyc
 *.pyo
@@ -6,9 +16,11 @@ __pycache__/
 env/
 venv/
 .venv/
-.env
-.idea/
-.vscode/
-*.h5  # Jangan ignore model file jika mau deploy
-*.hdf5
+
+# Logs
+*.log
+logs/
+
+# OS
 .DS_Store
+Thumbs.dbd

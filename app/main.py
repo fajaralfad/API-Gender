@@ -12,7 +12,7 @@ from app.utils import validate_image
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, settings.LOG_LEVEL.upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in production
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,15 +37,23 @@ async def startup_event():
     """Startup event - log startup completion"""
     logger.info("="*50)
     logger.info("Application starting up...")
+    logger.info(f"API Title: {settings.API_TITLE}")
     logger.info(f"API Version: {settings.API_VERSION}")
-    logger.info(f"Model will be loaded on first prediction request (lazy loading)")
+    logger.info(f"Host: {settings.HOST}")
+    logger.info(f"Port: {settings.PORT}")
+    logger.info(f"Log Level: {settings.LOG_LEVEL}")
+    logger.info(f"CORS Origins: {settings.CORS_ORIGINS}")
+    logger.info(f"Model Path: {settings.MODEL_PATH}")
+    logger.info(f"Image Size: {settings.IMAGE_SIZE}")
+    logger.info(f"Classes: {settings.CLASS_NAMES}")
+    logger.info("Model will be loaded on first prediction request (lazy loading)")
     logger.info("Application startup complete!")
     logger.info("="*50)
 
 @app.get("/")
 async def root():
     return {
-        "message": "Gender Classification API",
+        "message": settings.API_TITLE,
         "version": settings.API_VERSION,
         "status": "running",
         "model_status": "ready" if classifier.is_loaded else "will load on first request"
@@ -172,11 +180,9 @@ async def batch_predict(
         )
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    logger.info(f"Starting server on port {port}")
     uvicorn.run(
         app, 
-        host="0.0.0.0", 
-        port=port,
-        log_level="info"
+        host=settings.HOST, 
+        port=settings.PORT,
+        log_level=settings.LOG_LEVEL
     )

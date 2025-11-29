@@ -19,7 +19,7 @@ class GenderClassifier:
     def load_model(self):
         """Load ONNX model (lazy loading)"""
         if self.is_loaded:
-            return  # Model sudah loaded, skip
+            return
             
         try:
             logger.info(f"Loading ONNX model from: {settings.MODEL_PATH}")
@@ -27,7 +27,7 @@ class GenderClassifier:
             # Load ONNX model
             self.session = ort.InferenceSession(
                 settings.MODEL_PATH,
-                providers=['CPUExecutionProvider']  # Gunakan CPU
+                providers=['CPUExecutionProvider']
             )
             
             # Get input and output details
@@ -59,8 +59,8 @@ class GenderClassifier:
             if image.mode != 'RGB':
                 image = image.convert('RGB')
             
-            # Resize image sesuai input model (224x224 untuk BEiT)
-            target_size = settings.IMAGE_SIZE
+            # Resize image sesuai input model dari environment variable
+            target_size = (settings.IMAGE_SIZE, settings.IMAGE_SIZE)
             image = image.resize(target_size)
             
             # Convert to array dengan tipe data float32
@@ -126,7 +126,7 @@ class GenderClassifier:
             predicted_class_idx = np.argmax(probabilities)
             confidence = float(probabilities[predicted_class_idx])
             
-            # Get class name
+            # Get class name dari environment variable
             predicted_class = settings.CLASS_NAMES[predicted_class_idx]
             
             # Get all predictions with confidence
