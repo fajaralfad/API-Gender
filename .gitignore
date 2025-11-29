@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+.env
+.idea/
+.vscode/
+*.h5  # Jangan ignore model file jika mau deploy
+*.hdf5
+.DS_Store
